@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="EUC-KR">
+<title>미로찾기 게임 입니다.</title>
+<link rel="shortcut icon" href="./img/favicon.ico">
+
+	<style type="text/css">
+		html { width: 100%; height: 100%; }
+		body { width: 100%; height: 100%; 
+				background-image: url("./img/miroImg.png"); background-repeat: no-repeat; 
+				background-position: center center;
+				background-size : cover;
+			}
+		input { background-color: black; border:0; font-size:30px; color:#FF0000;}
+		#board { width: 100%; height: 100%; }
+		#watch { position: absolute; top:10px; margin-left:30px; background-color: black;}
+		#return { position:absolute; top: 10px; left: 250px; width: 80px; height: 55px;}
+		#game_print { position: relative; top: 50px; margin-left: 30px;}
+		
+		#watch_table{ border:10; border-color: red; background-color: red; }
+		#game_table { border-spacing: 0px; font-size: 0px; border: thin;}
+		#game_td { width: 20px; height: 20px; }
+		.wall { background-image: url("./img/wall.png"); } 
+		.road { background-image: url("./img/road.png"); }
+		.human { background-image: url("./img/human.png"); }
+		.outdoor { background-image: url("./img/exit.png"); }
+	
+	</style>
+	
+	<script type="text/javascript">
+	var currentsec=0; 
+	var currentmin=0; 
+	var currentmil=0; 
+	var keepgoin=false;
+	
+	function timer(){ 
+			if(keepgoin){ 
+  				currentmil+=1;                 
+   				if (currentmil==10){         
+    				currentmil=0;         
+    				currentsec+=1; 
+   			} 
+   	
+   			if (currentsec==60){         
+    			currentsec=0;         
+    			currentmin+=1;         
+   			} 
+  			Strsec=""+currentsec;         
+  			Strmin=""+currentmin;         
+  			Strmil=""+currentmil; 
+   			if (Strsec.length!=2){ 
+    			Strsec="0"+currentsec; 
+   			} 
+   			if (Strmin.length!=2){ 
+    			Strmin="0"+currentmin; 
+   			} 
+  		
+   			document.display.seconds.value=Strsec 
+  			document.display.minutes.value=Strmin; 
+  			document.display.milsecs.value=Strmil; 
+  			setTimeout("timer()", 100);         
+		} 
+	} 
+	
+	</script>
+	<script>
+		function rand(min, max) {
+   			var ranNum = Math.floor(Math.random()*(max-min+1)) + min;
+      			return ranNum;
+   		}
+		function dal(pan,size1,size2,dir,val,row,col)
+		{
+		       var i,count=0;
+		       var pos1,pos2,pos3;   
+		       if ( size1 == 0 || size2==0)
+		             return;
+			
+			pos1=rand(1,size1+size2-1);
+			pos2=rand(1,size1+size2-1);
+			pos3=rand(1,size1+size2-1);
+			pos4=rand(1,size1+size2-1);
+
+			for (i = 0; i < size1+size2-1; i++ )
+		        {
+		             if ( i < size2 )
+		                    col += dir;
+		             else
+		                    row += dir;
+			     count++;
+			     if(count==pos1 || count==pos2 || count==pos3 || count==pos4){
+				if(val==1 && rand(0,1)==0)
+			     	 pan[row][col] = 0;
+				else
+				 pan[row][col] = 1;
+			     }
+			     else	 
+		             	pan[row][col] = val;
+		        }
+			
+			size1--;size2--;
+			dir*=-1;
+
+			if ( size1 == 0 || size2==0)
+		             return;
+		         
+			for (i = 0; i < size1+size2-1; i++ )
+		        {
+		             if ( i < size2 )
+		                    col += dir;
+		             else
+		                    row += dir;
+			     count++;		 
+		             if(count==pos1 || count==pos2 || count==pos3 || count==pos4){
+				if(val==1 && rand(0,1)==0)
+			     	 pan[row][col] = 0;
+				else
+				 pan[row][col] = 1;
+			     }
+			     else	 
+		             	pan[row][col] = val;
+		        }
+
+		      	if(val==1)
+				val=0;
+			else
+				val=1;
+			dal(pan, size1-1, size2-1,-dir,val, row,col);
+		}
+		function last_work(pan,row,col,man){
+			var i,j;
+			var exit_x,exit_y;
+			for(i=0; i<pan.length; i++){
+				for(j=0; j<pan[i].length; j++){
+					if(i==0 || j==0 || i==row-1 || j==col-1)
+					   pan[i][j]=0;
+				}
+			}
+			exit_x=Math.floor(row/2);
+			exit_y=Math.floor(col/2);
+			pan[man.xPos][man.yPos]=3;
+			pan[exit_x][exit_y]=4;
+		
+			
+		}
+		function show_pan(pan,row,col){
+			
+			var i,j;
+			document.write("<table id=game_table>");
+		
+		 	for(i=0; i<row; i++){
+		    		document.write("<tr>");  
+		     		for(j=0; j<col; j++){
+		     			switch(pan[i][j]){
+		     				case 0: document.write("<td id=game_td class=wall>"); break;
+		     				case 1: document.write("<td id=game_td class=road>"); break;
+		     				case 3: document.write("<td id=game_td class=human>"); break;
+		     				case 4: document.write("<td id=game_td class=outdoor>"); break;
+		     			}
+						document.write(pan[i][j]);
+		  	 			document.write("</td>");			
+		 			}
+		  		document.write("</tr>");
+			}
+			document.write("</table>");
+		
+		}
+		function table_value(x,y,update){
+			document.getElementsByTagName('tr')[x].childNodes[y].childNodes[0].nodeValue=update;
+		}
+		function tableClassChange(x,y,update){
+			document.getElementsByTagName('tr')[x].childNodes[y].className=update;
+		}
+		function table_element(x,y){
+			var node = document.getElementsByTagName('tr')[x].childNodes[y].childNodes[0];	
+			return node;
+		}
+		function swap_Value(pan,x,y,value){	
+			pan[x][y]=value;
+		}
+		function manPosChange(man,x,y){
+			man.xPos=x;
+			man.yPos=y;
+		}
+	
+	</script>
+	<script>
+	function wasd(man){
+		
+		var keycode = event.keyCode;
+		var rkey=String.fromCharCode( keycode );
+		var moveX,moveY;
+		if(keepgoin==false){
+			keepgoin=true;
+			timer();
+		}
+		if(rkey=='W' || rkey=='w'){
+			moveX=man.xPos-1;
+			moveY=man.yPos;
+			
+			if(table_element(moveX,moveY).nodeValue==0  ){}
+			else if(table_element(moveX,moveY).nodeValue==4){
+				alert("게임이 끝났습니다."); 
+				location.replace("index.html");
+			}
+			else{
+				table_value(moveX,moveY,3);
+				tableClassChange(moveX,moveY,"human");
+				table_value(man.xPos,man.yPos,1);
+				tableClassChange(man.xPos,man.yPos,"road");
+				manPosChange(man,moveX,moveY);
+			}
+			//만약 이동하고자하는 좌표의 값이 0이면 return;
+			//현재 배열에서 3(캐릭터)의 좌표에서 x축 -- 한위치를 캐릭터로 셋팅하고 현좌표는 1로 셋팅	
+		}
+		else if(rkey=='A' || rkey=='a'){
+			moveX=man.xPos;
+			moveY=man.yPos-1;
+			if( table_element(moveX,moveY).nodeValue==0 ){}
+			else if(table_element(moveX,moveY).nodeValue==4){
+				alert("게임이 끝났습니다."); 
+				location.replace("index.html");
+			}
+			else{
+				table_value(moveX,moveY,3);
+				tableClassChange(moveX,moveY,"human");
+				table_value(man.xPos,man.yPos,1);
+				tableClassChange(man.xPos,man.yPos,"road");
+				manPosChange(man,moveX,moveY);
+			}
+			//현재 배열에서 3(캐릭터)의 좌표에서 y축 -- 한위치를 캐릭터로 셋팅하고 현좌표는 1로 셋팅
+		}
+		else if(rkey=='S' || rkey=='s'){
+			moveX=man.xPos+1;
+			moveY=man.yPos;
+			if( table_element(moveX,moveY).nodeValue==0 ){}
+			else if(table_element(moveX,moveY).nodeValue==4){
+				alert("게임이 끝났습니다."); 
+				location.replace("index.html");
+			}
+			else{
+				table_value(moveX,moveY,3);
+				tableClassChange(moveX,moveY,"human");
+				table_value(man.xPos,man.yPos,1);
+				tableClassChange(man.xPos,man.yPos,"road");
+				manPosChange(man,moveX,moveY);
+			}
+			//현재 배열에서 3(캐릭터)의 좌표에서 x축 ++ 한위치를 캐릭터로 셋팅하고 현좌표는 1로 셋팅
+		}
+		else if(rkey=='D' || rkey=='d'){
+			moveX=man.xPos;
+			moveY=man.yPos+1;
+			if( table_element(moveX,moveY).nodeValue==0 ){}
+			else if(table_element(moveX,moveY).nodeValue==4){
+				alert("게임이 끝났습니다."); 
+				location.replace("index.html");
+			}
+			else{
+				table_value(moveX,moveY,3);
+				tableClassChange(moveX,moveY,"human");
+				table_value(man.xPos,man.yPos,1);
+				tableClassChange(man.xPos,man.yPos,"road");
+				manPosChange(man,moveX,moveY);
+			}
+				
+			//현재 배열에서 3(캐릭터)의 좌표에서 y축 ++ 한위치를 캐릭터로 셋팅하고 현좌표는 1로 셋팅
+		}
+		
+	}	
+	</script>
+	
+</head>
+<body  onkeydown="wasd(man)">
+	
+	<script type="text/javascript">	
+	    var man = new Object();
+		man.xPos=1;
+		man.yPos=0;
+
+
+	    var row_s,col_s;
+		var i,j;
+		 row_s=prompt("행을 입력하세요 : ");
+		 col_s=prompt("열을 입력하세요 :");
+	</script>
+		
+	<form name="display" id="watch">
+		<table id=watch_table>
+			<div style="font-size:30px; color:#ff0000"> 
+ 				<input type="text" name="minutes" value="00" size=3 style="width:33px; "> 
+					: 
+				<input type="text" name="seconds" value="00" size=3 style="width:35px; "> 
+					: 
+				<input type="text" name="milsecs" value="0" size=3 style="width:20px; "> 
+			</div>
+		</table> 
+	</form>
+	
+	<a href="javascript:rescue();"><img src="./img/returnImg.png" id="return"></a>
+	<script>
+		function rescue(){
+			alert("비상구로 나갔습니다... 게임 종료");
+			location.replace("index.html");
+		}
+	</script>
+	<br>
+	
+	<script>
+	
+		 row=parseInt(row_s)+2;
+		 col=parseInt(col_s)+2;
+
+		 var pan=new Array(row);
+		 for(i=0; i<row; i++){
+			 pan[i]=new Array(col);
+			 for(j=0; j<col; j++){
+					pan[i][j]=1;
+				}
+		 }
+		
+		 dal(pan, row , col , 1, 0, 0, -1);
+		 last_work(pan,row,col,man);
+		 
+	</script>
+	
+	
+	<div id="game_print">
+		<script>
+		   show_pan(pan,row,col);
+		</script>
+	</div>
+	
+</body>
+	
+
+</html>
+
+
